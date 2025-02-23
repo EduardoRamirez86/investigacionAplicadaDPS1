@@ -1,11 +1,14 @@
-# Usar una imagen base de PHP con Apache
 FROM php:8.2-apache
 
-# Copiar los archivos de la aplicación al contenedor
-COPY . /var/www/html/
+RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# Exponer el puerto 80
+RUN a2enmod rewrite
+
+COPY src/ /var/www/html/
+
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html
+
 EXPOSE 80
 
-# Comando para iniciar Apache
 CMD ["apache2-foreground"]

@@ -1,54 +1,69 @@
 <?php
 header("Content-Type: application/json");
 
-// Simulación de una base de datos
-$users = [
-    'user1' => 'password1',
-    'user2' => 'password2'
-];
+$servername = "db"; // Nombre del servicio en Docker
+$username = "root";
+$password = "123456";
+$dbname = "Libros_db";
 
-// Endpoint para autenticación
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/login') {
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) {
+    http_response_code(500);
+    echo json_encode(["error" => "Database connection failed"]);
+    exit;
+}
+
+$uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+$method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'POST' && $uri === 'login') {
     $data = json_decode(file_get_contents('php://input'), true);
-    $username = $data['username'] ?? '';
-    $password = $data['password'] ?? '';
+    $user = $data['username'] ?? '';
+    $pass = $data['password'] ?? '';
 
-    if (isset($users[$username]) && $users[$username] === $password) {
-        // Generar un token JWT (simulado)
-        $token = base64_encode(json_encode(['username' => $username, 'exp' => time() + 3600]));
-        echo json_encode(['token' => $token]);
+    $stmt = $conn->prepare("SELECT password FROM users WHERE username = ?");
+    $stmt->bind_param("s", $user);
+    $stmt->execute();
+    $stmt->bind_result($hash);
+    $stmt->fetch();
+    $stmt->close();
+
+    if (password_verify($pass, $hash)) {
+        $token = base64_encode(json_encode(["username" => $user, "exp" => time() + 3600]));
+        echo json_encode(["token" => $token]);
     } else {
         http_response_code(401);
-        echo json_encode(['error' => 'Invalid credentials']);
+        echo json_encode(["error" => "Invalid credentials"]);
     }
     exit;
 }
 
-// Endpoint protegido
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_SERVER['REQUEST_URI'] === '/data') {
+if ($method === 'GET' && $uri === 'data') {
     $headers = getallheaders();
     $token = $headers['Authorization'] ?? '';
 
     if ($token) {
         $payload = json_decode(base64_decode($token), true);
         if ($payload && isset($payload['username']) && $payload['exp'] > time()) {
-            echo json_encode(['data' => 'This is protected data for ' . $payload['username']]);
+            echo json_encode(["data" => "Protected data for " . $payload['username']]);
             exit;
         }
     }
-
     http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
+    echo json_encode(["error" => "Unauthorized"]);
     exit;
 }
 
-// Endpoint público
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_SERVER['REQUEST_URI'] === '/public') {
-    echo json_encode(['message' => 'This is public data']);
+if ($method === 'GET' && $uri === 'public') {
+    echo json_encode(["message" => "This is public data"]);
     exit;
 }
 
-// Si no se encuentra el endpoint
+if ($method === 'GET' && $uri === '') {
+    echo json_encode(["message" => "Welcome to the API"]);
+    exit;
+}
+
+
 http_response_code(404);
-echo json_encode(['error' => 'Not Found']);
-?>
+echo json_encode(["error" => "Not Found"]);
