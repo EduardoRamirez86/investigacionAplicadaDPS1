@@ -2,7 +2,7 @@
 
     class Connection extends Mysqli{
         function __construct(){
-            parent::__construct('localhost', 'root', '', 'libreria');
+            parent::__construct('db', 'root', '123456', 'libreria');
             $this->set_charset('utf8');
             $this->connect_error == NULL ? 'Conexion existosa a la DB' : die('Error al conectarese a la base de datos');
         }

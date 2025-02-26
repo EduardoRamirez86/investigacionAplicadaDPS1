@@ -14,7 +14,7 @@ services:
     image: mysql:5.7
     environment:
       MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: Libreria
+      MYSQL_DATABASE: libreria
     volumes:
       - db_data:/var/lib/mysql
     networks:
