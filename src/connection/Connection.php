@@ -1,10 +1,22 @@
 <?php
 
-    class Connection extends Mysqli{
-        function __construct(){
-            parent::__construct('db', 'root', '123456', 'libreria');
-            $this->set_charset('utf8');
-            $this->connect_error == NULL ? 'Conexion existosa a la DB' : die('Error al conectarese a la base de datos');
+    class Database {
+        private $host = "localhost";
+        private $db_name = "libreria";
+        private $username = "root";
+        private $password = "";
+        public $conn;
+
+        public function getConnection() {
+            $this->conn = null;
+            try {
+                $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name,
+                                    $this->username, $this->password);
+                $this->conn->exec("set names utf8");
+            } catch (PDOException $exception) {
+                echo "Error de conexión: " . $exception->getMessage();
+            }
+            return $this->conn;
         }
     }
     
@@ -24,7 +36,6 @@ try {
 } catch (PDOException $e) {
     die("Error de conexión: " . $e->getMessage());
 }
-?>
 */ 
     
 ?>

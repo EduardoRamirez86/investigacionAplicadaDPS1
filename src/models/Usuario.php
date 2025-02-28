@@ -1,82 +1,76 @@
 <?php
-    require_once "../connection/Connection.php";
+class Usuario {
+    private $conn;
 
-    class Usuario {
+    public $IDusuario;
+    public $nombreUsuario;
+    public $apellidoUsuario;
+    public $contrasennia;
+    public $IDrol;
 
-        public static function getAll(){
-            $db = new Connection();
-            $query = "SELECT * FROM usuario";
-            $result = $db->query($query);
-            $datos = [];
-            if($result-> num_rows){
-                while($row = $result->fetch_assoc()){
-                    $datos [] = [
-                        'IDusuario' => $row ['IDusuario'],
-                        'nombreUsuario' => $row['nombreUsuario'],
-                        'apellidoUsuario' => $row ['apellidoUsuario'],
-                        'contrasennia' => $row ['contrasennia'],
-                        'IDrol' => $row['IDrol'],
-                    ];
-                }
-                return $datos;
-            }
-            return $datos;
-        }
-
-        public static function getWhere($IDusuario){
-            $db = new Connection();
-            $query = "SELECT * FROM usuario WHERE IDusuario =$IDusuario";
-            $result = $db->query($query);
-            $datos = [];
-            if($result->num_rows){
-                while($row = $result->fetch_assoc()){
-                    $datos[] = [
-                        'IDusuario' => $row ['IDusuario'],
-                        'nombreUsuario'=> $row ['nombreUsuario'],
-                        'apellidoUsuario'=> $row ['apellidoUsuario'],
-                        'contrasennia'=> $row ['contrasennia'],
-                        'IDrol'=> $row ['IDrol'],
-                    ];
-                }
-                return $datos;
-            }
-            return $datos;
-        }
-
-        public static function insert($nombreUsuario, $apellidoUsuario, $contrasennia, $IDrol){
-            $db = new Connection();
-            $query = "INSERT INTO usuario (nombreUsuario,apellidoUsuario,contrasennia,IDrol)
-            VALUES ('$nombreUsuario', '$apellidoUsuario', '$contrasennia', '$IDrol')";
-            $db->query($query);
-            if ($db->affected_rows){
-                return TRUE;
-            }
-            return FALSE;
-        }
-
-        public static function update($IDusuario, $nombreUsuario, $apellidoUsuario, $contrasennia, $IDrol){
-            $db = new Connection();
-            $query = "UPDATE usuario SET
-                        nombreUsuario = '$nombreUsuario'
-                        apellidoUsuario = '$apellidoUsuario',
-                        contrasennia = '$contrasennia',
-                        IDrol = 'IDrol'
-                        WHERE IDusuario = $IDusuario";
-            $db->query($query);
-            if ($db->affected_rows) {
-            return TRUE;
-            }
-            return FALSE;
-        }
-
-        public static function delete($IDusuario){
-            $db = new Connection();
-            $query ="DELETE FROM usuario WHERE IDusuario=$IDusuario";
-            $db->query($query);
-            if ($db->affected_rows) {
-                return TRUE;
-            }
-            return FALSE;
-        }
+    public function __construct($db) {
+        $this->conn = $db;
     }
-?>
+
+    public function getAll() {
+        $query = "SELECT u.IDusuario, u.nombreUsuario, u.apellidoUsuario, r.nombreRol 
+                  FROM usuario u 
+                  INNER JOIN rol r ON u.IDrol = r.IDrol";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt;
+    }
+
+    public function getById($id) {
+        $query = "SELECT u.IDusuario, u.nombreUsuario, u.apellidoUsuario, r.nombreRol 
+                  FROM usuario u 
+                  INNER JOIN rol r ON u.IDrol = r.IDrol
+                  WHERE u.IDusuario = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function create() {
+        $query = "INSERT INTO usuario (nombreUsuario, apellidoUsuario, contrasennia, IDrol) 
+                  VALUES (?, ?, ?, ?)";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([
+            $this->nombreUsuario,
+            $this->apellidoUsuario,
+            $this->contrasennia,
+            $this->IDrol
+        ]);
+    }
+
+    public function update() {
+        $query = "UPDATE usuario 
+                  SET nombreUsuario = ?, apellidoUsuario = ?, 
+                      contrasennia = IF(?='', contrasennia, ?), 
+                      IDrol = ? 
+                  WHERE IDusuario = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([
+            $this->nombreUsuario,
+            $this->apellidoUsuario,
+            $this->contrasennia,
+            $this->contrasennia,
+            $this->IDrol,
+            $this->IDusuario
+        ]);
+    }
+
+    public function delete($id) {
+        $query = "DELETE FROM usuario WHERE IDusuario = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([$id]);
+    }
+
+    public function login($nombreUsuario) {
+        $sql = "SELECT * FROM usuario WHERE nombreUsuario = :nombreUsuario";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':nombreUsuario', $nombreUsuario);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC); // Devuelve el usuario completo (incluye contraseña hash)
+    }
+}

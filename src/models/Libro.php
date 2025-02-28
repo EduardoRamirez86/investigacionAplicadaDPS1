@@ -1,83 +1,50 @@
 <?php 
-    require_once "../connection/Connection.php";
+    require_once "./connection/Connection.php";
 
     class Libro {
-
-        public static function getAll(){
-            $db = new Connection();
-            $query = "SELECT * FROM libro";
-            $result = $db->query($query);
-            $datos = [];
-            if($result->num_rows){
-                while($row = $result->fetch_assoc()){
-                    $datos[] = [
-                        'id' => $row['ID'],
-                        'nombreLibro' => $row['nombreLibro'],
-                        'autor' => $row['autor'],
-                        'editorial' => $row['editorial'],
-                        'edicion' => $row['edicion'],
-                    ];
-                }
-                return $datos;
+            private $conn;
+            private $table = "libro";
+        
+            public $ID;
+            public $nombreLibro;
+            public $autor;
+            public $editorial;
+            public $edicion;
+        
+            public function __construct($db) {
+                $this->conn = $db;
+            }
+        
+            public function getAll() {
+                $query = "SELECT * FROM " . $this->table;
+                $stmt = $this->conn->prepare($query);
+                $stmt->execute();
+                return $stmt;
+            }
+        
+            public function create() {
+                $query = "INSERT INTO " . $this->table . " (nombreLibro, autor, editorial, edicion) VALUES (?, ?, ?, ?)";
+                $stmt = $this->conn->prepare($query);
+                return $stmt->execute([$this->nombreLibro, $this->autor, $this->editorial, $this->edicion]);
             }
 
-            return $datos;
-        }
-
-        public static function getWhere($id_libro){
-            $db = new Connection();
-            $query = "SELECT * FROM libro WHERE ID=$id_libro";
-            $result = $db->query($query);
-            $datos = [];
-            if($result->num_rows){
-                while($row = $result->fetch_assoc()){
-                    $datos[] = [
-                        'id' => $row['ID'],
-                        'nombreLibro' => $row['nombreLibro'],
-                        'autor' => $row['autor'],
-                        'editorial' => $row['editorial'],
-                        'edicion' => $row['edicion'],
-                    ];
-                }
-                return $datos;
+            public function getById($id) {
+                $query = "SELECT * FROM libro WHERE ID = ?";
+                $stmt = $this->conn->prepare($query);
+                $stmt->execute([$id]);
+                return $stmt;
             }
-            return $datos;
-        }
-
-        public static function insert($nombreLibro, $autor, $editorial, $edicion){
-            $db = new Connection();
-            $query = "INSERT INTO libro (nombreLibro, autor, editorial, edicion) 
-            VALUES ('$nombreLibro', '$autor', '$editorial', '$edicion')";
-            $db->query($query);
-            if ($db->affected_rows){
-                return TRUE;
+            
+            public function update() {
+                $query = "UPDATE libro SET nombreLibro = ?, autor = ?, editorial = ?, edicion = ? WHERE ID = ?";
+                $stmt = $this->conn->prepare($query);
+                return $stmt->execute([$this->nombreLibro, $this->autor, $this->editorial, $this->edicion, $this->ID]);
             }
-            return FALSE;
-        }
-
-        public static function update($ID, $nombreLibro, $autor, $editorial, $edicion){
-            $db = new Connection();
-            $query = "UPDATE libro SET 
-                        nombreLibro = '$nombreLibro', 
-                        autor = '$autor', 
-                        editorial = '$editorial', 
-                        edicion = '$edicion' 
-                    WHERE ID = $ID";
-            $db->query($query);
-            if ($db->affected_rows){
-                return TRUE;
+            
+            public function delete($id) {
+                $query = "DELETE FROM libro WHERE ID = ?";
+                $stmt = $this->conn->prepare($query);
+                return $stmt->execute([$id]);
             }
-            return FALSE;
         }
-
-        public static function delete($ID){
-            $db = new Connection();
-            $query = "DELETE FROM libro WHERE ID=$ID";
-            $db->query($query);
-            if ($db->affected_rows){
-                return TRUE;
-            }
-            return FALSE;
-        }
-    }
 ?>
