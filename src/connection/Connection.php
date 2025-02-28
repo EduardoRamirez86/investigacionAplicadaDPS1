@@ -4,7 +4,7 @@
         private $host = "localhost";
         private $db_name = "libreria";
         private $username = "root";
-        private $password = "";
+        private $password = "123456";
         public $conn;
 
         public function getConnection() {
